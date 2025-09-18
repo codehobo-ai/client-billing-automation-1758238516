@@ -34,9 +34,12 @@ function parseIssueBody(issueBody) {
     process.exit(1);
   }
 
+  const branchName = data.clientName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+
   console.log(`::set-output name=CLIENT_NAME::${data.clientName}`);
   console.log(`::set-output name=BILLING_TYPE::${data.billingType}`);
   console.log(`::set-output name=TIER::${data.tier}`);
+  console.log(`::set-output name=BRANCH_NAME::${branchName}`);
 
   return data;
 }

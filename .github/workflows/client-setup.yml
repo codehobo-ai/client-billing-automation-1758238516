@@ -62,6 +62,9 @@ jobs:
             echo "CLIENT_NAME=${{ inputs.client_name }}" >> $GITHUB_OUTPUT
             echo "BILLING_TYPE=${{ inputs.billing_type }}" >> $GITHUB_OUTPUT
             echo "TIER=${{ inputs.tier }}" >> $GITHUB_OUTPUT
+            # Create branch-safe name
+            BRANCH_NAME=$(echo "${{ inputs.client_name }}" | tr ' ' '-' | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9-]//g')
+            echo "BRANCH_NAME=$BRANCH_NAME" >> $GITHUB_OUTPUT
           fi
 
       - name: Create client configuration
@@ -100,7 +103,7 @@ jobs:
             - [x] Access permissions configured
 
             Please review and merge this PR to complete the setup.
-          branch: setup/${{ steps.parse.outputs.CLIENT_NAME }}
+          branch: setup/${{ steps.parse.outputs.BRANCH_NAME }}
           commit-message: "Add client setup for ${{ steps.parse.outputs.CLIENT_NAME }}"
 
       - name: Comment on issue

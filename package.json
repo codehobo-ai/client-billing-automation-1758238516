@@ -1,0 +1,35 @@
+{
+  "name": "client-billing-setup-automation",
+  "version": "1.0.0",
+  "description": "Automated client billing and setup system",
+  "main": "src/index.js",
+  "scripts": {
+    "test": "jest",
+    "lint": "eslint .",
+    "start": "node src/index.js",
+    "setup": "node scripts/setup.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/YOUR_USERNAME/client-billing-setup-automation.git"
+  },
+  "keywords": [
+    "automation",
+    "billing",
+    "client-management",
+    "github-actions"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@octokit/rest": "^20.0.2",
+    "axios": "^1.6.2",
+    "dotenv": "^16.3.1",
+    "js-yaml": "^4.1.0",
+    "moment": "^2.29.4"
+  },
+  "devDependencies": {
+    "eslint": "^8.55.0",
+    "jest": "^29.7.0"
+  }
+}

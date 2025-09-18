@@ -1,0 +1,80 @@
+{
+  "app": {
+    "name": "Client Billing Setup Automation",
+    "version": "1.0.0",
+    "environment": "production"
+  },
+  "billing": {
+    "currency": "USD",
+    "taxRate": 0.08,
+    "gracePeriod": 7,
+    "tiers": {
+      "basic": {
+        "name": "Basic",
+        "description": "Essential features for small businesses",
+        "features": ["email_support", "basic_reporting"],
+        "pricing": {
+          "monthly": 49,
+          "quarterly": 140,
+          "annual": 500
+        }
+      },
+      "standard": {
+        "name": "Standard",
+        "description": "Advanced features for growing businesses",
+        "features": ["email_support", "phone_support", "advanced_reporting", "api_access"],
+        "pricing": {
+          "monthly": 99,
+          "quarterly": 280,
+          "annual": 1000
+        }
+      },
+      "premium": {
+        "name": "Premium",
+        "description": "Premium features with dedicated support",
+        "features": ["priority_support", "custom_reporting", "api_access", "dedicated_account_manager"],
+        "pricing": {
+          "monthly": 199,
+          "quarterly": 560,
+          "annual": 2000
+        }
+      },
+      "enterprise": {
+        "name": "Enterprise",
+        "description": "Full-scale solution with dedicated team",
+        "features": ["24x7_support", "custom_features", "sla_guarantee", "dedicated_team"],
+        "pricing": {
+          "monthly": 499,
+          "quarterly": 1400,
+          "annual": 5000
+        }
+      }
+    }
+  },
+  "notifications": {
+    "email": {
+      "enabled": true,
+      "templates": {
+        "welcome": "welcome-template",
+        "billing": "billing-template",
+        "renewal": "renewal-template"
+      }
+    },
+    "slack": {
+      "enabled": false,
+      "webhook": ""
+    }
+  },
+  "integrations": {
+    "stripe": {
+      "enabled": false,
+      "publicKey": "",
+      "webhookSecret": ""
+    },
+    "quickbooks": {
+      "enabled": false,
+      "clientId": "",
+      "clientSecret": ""
+    }
+  }
+}

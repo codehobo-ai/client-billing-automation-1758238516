@@ -1,0 +1,26 @@
+{
+  "client": {
+    "name": "Beta Testing Co",
+    "id": "beta-testing-co",
+    "created": "2025-09-18T23:51:24.613Z",
+    "status": "active"
+  },
+  "billing": {
+    "type": "monthly",
+    "tier": "standard",
+    "startDate": "2025-09-18T23:51:24.613Z",
+    "nextBillingDate": "2025-10-18T23:51:24.613Z"
+  },
+  "services": [
+    "email_support",
+    "phone_support",
+    "advanced_reporting",
+    "api_access"
+  ],
+  "contacts": [],
+  "settings": {
+    "notifications": true,
+    "autoRenewal": true,
+    "invoiceDelivery": "email"
+  }
+}

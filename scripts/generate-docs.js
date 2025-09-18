@@ -2,13 +2,18 @@
 
 const fs = require('fs');
 const path = require('path');
-const { parseArgs } = require('util');
+function parseCliArgs() {
+  const args = process.argv.slice(2);
+  const values = {};
 
-const { values } = parseArgs({
-  options: {
-    client: { type: 'string' }
+  for (let i = 0; i < args.length; i += 2) {
+    const key = args[i].replace('--', '');
+    const value = args[i + 1];
+    values[key] = value;
   }
-});
+
+  return values;
+}
 
 function generateDocumentation(clientName) {
   const clientId = clientName.toLowerCase().replace(/\s+/g, '-');
@@ -98,6 +103,7 @@ ${billingConfig.tier === 'premium' || billingConfig.tier === 'enterprise' ? '- *
 }
 
 if (require.main === module) {
+  const values = parseCliArgs();
   const { client } = values;
 
   if (!client) {

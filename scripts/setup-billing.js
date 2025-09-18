@@ -2,14 +2,18 @@
 
 const fs = require('fs');
 const path = require('path');
-const { parseArgs } = require('util');
+function parseCliArgs() {
+  const args = process.argv.slice(2);
+  const values = {};
 
-const { values } = parseArgs({
-  options: {
-    client: { type: 'string' },
-    type: { type: 'string' }
+  for (let i = 0; i < args.length; i += 2) {
+    const key = args[i].replace('--', '');
+    const value = args[i + 1];
+    values[key] = value;
   }
-});
+
+  return values;
+}
 
 function setupBilling(clientName, billingType) {
   const clientId = clientName.toLowerCase().replace(/\s+/g, '-');
@@ -70,6 +74,7 @@ function generateSubscriptionId() {
 }
 
 if (require.main === module) {
+  const values = parseCliArgs();
   const { client, type } = values;
 
   if (!client || !type) {

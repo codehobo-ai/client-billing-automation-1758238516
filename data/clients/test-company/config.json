@@ -1,0 +1,26 @@
+{
+  "client": {
+    "name": "Test Company",
+    "id": "test-company",
+    "created": "2025-09-18T23:39:37.375Z",
+    "status": "active"
+  },
+  "billing": {
+    "type": "monthly",
+    "tier": "premium",
+    "startDate": "2025-09-18T23:39:37.375Z",
+    "nextBillingDate": "2025-10-18T23:39:37.375Z"
+  },
+  "services": [
+    "priority_support",
+    "custom_reporting",
+    "api_access",
+    "dedicated_account_manager"
+  ],
+  "contacts": [],
+  "settings": {
+    "notifications": true,
+    "autoRenewal": true,
+    "invoiceDelivery": "email"
+  }
+}

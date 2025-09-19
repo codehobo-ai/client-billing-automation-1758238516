@@ -1,0 +1,173 @@
+name: Supabase Schema Setup
+
+on:
+  workflow_dispatch:
+    inputs:
+      client_name:
+        description: 'Client name for reference'
+        required: true
+        type: string
+      supabase_url:
+        description: 'Supabase project URL (e.g., https://your-project.supabase.co)'
+        required: true
+        type: string
+      supabase_service_key:
+        description: 'Supabase service role key (will be masked in logs)'
+        required: true
+        type: string
+      database_password:
+        description: 'Database password (will be masked in logs)'
+        required: true
+        type: string
+      setup_vector_extension:
+        description: 'Setup vector extension for embeddings'
+        required: false
+        type: boolean
+        default: true
+      dry_run:
+        description: 'Dry run mode (validate only, do not execute)'
+        required: false
+        type: boolean
+        default: false
+
+env:
+  SUPABASE_URL: ${{ inputs.supabase_url }}
+  SUPABASE_SERVICE_KEY: ${{ inputs.supabase_service_key }}
+  DATABASE_PASSWORD: ${{ inputs.database_password }}
+
+jobs:
+  validate-inputs:
+    runs-on: ubuntu-latest
+    outputs:
+      supabase_host: ${{ steps.parse.outputs.supabase_host }}
+      project_id: ${{ steps.parse.outputs.project_id }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Parse and validate inputs
+        id: parse
+        run: |
+          node scripts/validate-supabase-inputs.js \
+            --client "${{ inputs.client_name }}" \
+            --url "${{ inputs.supabase_url }}" \
+            --dry-run "${{ inputs.dry_run }}"
+
+  setup-schema:
+    needs: validate-inputs
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Install Supabase CLI
+        run: |
+          npm install -g @supabase/cli
+          echo "Supabase CLI installed"
+
+      - name: Validate connection
+        run: |
+          node scripts/test-supabase-connection.js \
+            --url "${{ inputs.supabase_url }}" \
+            --key "${{ inputs.supabase_service_key }}"
+
+      - name: Setup vector extension
+        if: ${{ inputs.setup_vector_extension }}
+        run: |
+          node scripts/setup-vector-extension.js \
+            --url "${{ inputs.supabase_url }}" \
+            --key "${{ inputs.supabase_service_key }}" \
+            --dry-run "${{ inputs.dry_run }}"
+
+      - name: Create sequences
+        run: |
+          node scripts/setup-sequences.js \
+            --url "${{ inputs.supabase_url }}" \
+            --key "${{ inputs.supabase_service_key }}" \
+            --dry-run "${{ inputs.dry_run }}"
+
+      - name: Create tables
+        run: |
+          node scripts/setup-tables.js \
+            --url "${{ inputs.supabase_url }}" \
+            --key "${{ inputs.supabase_service_key }}" \
+            --dry-run "${{ inputs.dry_run }}"
+
+      - name: Setup foreign key constraints
+        run: |
+          node scripts/setup-constraints.js \
+            --url "${{ inputs.supabase_url }}" \
+            --key "${{ inputs.supabase_service_key }}" \
+            --dry-run "${{ inputs.dry_run }}"
+
+      - name: Setup indexes
+        run: |
+          node scripts/setup-indexes.js \
+            --url "${{ inputs.supabase_url }}" \
+            --key "${{ inputs.supabase_service_key }}" \
+            --dry-run "${{ inputs.dry_run }}"
+
+      - name: Verify schema setup
+        run: |
+          node scripts/verify-schema.js \
+            --url "${{ inputs.supabase_url }}" \
+            --key "${{ inputs.supabase_service_key }}"
+
+      - name: Generate setup report
+        run: |
+          node scripts/generate-setup-report.js \
+            --client "${{ inputs.client_name }}" \
+            --url "${{ inputs.supabase_url }}" \
+            --dry-run "${{ inputs.dry_run }}"
+
+      - name: Create setup documentation
+        if: ${{ !inputs.dry_run }}
+        uses: peter-evans/create-pull-request@v5
+        with:
+          title: "Supabase Setup: ${{ inputs.client_name }}"
+          body: |
+            ## Supabase Schema Setup Completed
+
+            **Client:** ${{ inputs.client_name }}
+            **Supabase URL:** ${{ inputs.supabase_url }}
+            **Setup Date:** ${{ github.run_id }}
+
+            ### Schema Components Deployed:
+            - [x] Vector extension (pgvector)
+            - [x] Database sequences
+            - [x] Core tables (accounts, vendors, locations, ai_processed_bills)
+            - [x] Foreign key constraints
+            - [x] Database indexes
+            - [x] Schema verification completed
+
+            ### Tables Created:
+            - **accounts** - Chart of accounts management
+            - **vendors** - Vendor information and management
+            - **locations** - Location/class management
+            - **ai_processed_bills** - AI-processed bill data
+
+            The Supabase schema has been successfully deployed and is ready for use.
+          branch: supabase-setup/${{ inputs.client_name }}
+          commit-message: "Add Supabase schema setup for ${{ inputs.client_name }}"
+
+      - name: Log completion
+        run: |
+          echo "✅ Supabase schema setup completed successfully for ${{ inputs.client_name }}"
+          echo "🔗 Supabase URL: ${{ inputs.supabase_url }}"
+          echo "📊 Setup mode: ${{ inputs.dry_run && 'DRY RUN' || 'LIVE DEPLOYMENT' }}"

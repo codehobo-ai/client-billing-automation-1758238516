@@ -78,7 +78,9 @@ jobs:
 
       - name: Install Supabase CLI
         run: |
-          npm install -g supabase
+          # Use the recommended installation method
+          curl -sSfL https://supabase.com/install.sh | sh
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
           echo "Supabase CLI installed"
 
       - name: Validate connection

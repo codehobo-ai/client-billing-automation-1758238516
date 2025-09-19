@@ -14,56 +14,39 @@ const GITHUB_REPO = process.env.GITHUB_REPO || 'client-billing-automation-175823
 const WEBHOOK_SECRET = process.env.WEBHOOK_SECRET; // For validating requests
 const ALLOWED_DOMAINS = process.env.ALLOWED_DOMAINS?.split(',') || ['*']; // CORS domains
 
-// Main handler function (adjust based on your platform)
-exports.handler = async (event, context) => {
+// Main handler function for Vercel
+export default async function handler(req, res) {
   // CORS headers
-  const headers = {
-    'Access-Control-Allow-Origin': ALLOWED_DOMAINS[0] === '*' ? '*' : event.headers.origin,
-    'Access-Control-Allow-Headers': 'Content-Type',
-    'Access-Control-Allow-Methods': 'POST, OPTIONS',
-    'Content-Type': 'application/json'
-  };
+  const origin = ALLOWED_DOMAINS[0] === '*' ? '*' : req.headers.origin;
+  res.setHeader('Access-Control-Allow-Origin', origin);
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Content-Type', 'application/json');
 
   // Handle preflight
-  if (event.httpMethod === 'OPTIONS') {
-    return {
-      statusCode: 200,
-      headers,
-      body: ''
-    };
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
   }
 
   // Only allow POST
-  if (event.httpMethod !== 'POST') {
-    return {
-      statusCode: 405,
-      headers,
-      body: JSON.stringify({ error: 'Method not allowed' })
-    };
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Method not allowed' });
   }
 
   try {
-    const body = JSON.parse(event.body);
+    const body = req.body;
 
     // Validate required fields
     const required = ['clientName', 'email', 'supabaseUrl', 'supabaseKey', 'databasePassword'];
     for (const field of required) {
       if (!body[field]) {
-        return {
-          statusCode: 400,
-          headers,
-          body: JSON.stringify({ error: `Missing required field: ${field}` })
-        };
+        return res.status(400).json({ error: `Missing required field: ${field}` });
       }
     }
 
     // Validate Supabase URL format
     if (!body.supabaseUrl.includes('supabase.co')) {
-      return {
-        statusCode: 400,
-        headers,
-        body: JSON.stringify({ error: 'Invalid Supabase URL format' })
-      };
+      return res.status(400).json({ error: 'Invalid Supabase URL format' });
     }
 
     // Create workflow run ID
@@ -103,31 +86,23 @@ exports.handler = async (event, context) => {
     // Optional: Store in database for tracking
     // await storeSetupRequest(body, runId);
 
-    return {
-      statusCode: 200,
-      headers,
-      body: JSON.stringify({
-        success: true,
-        message: 'Supabase schema setup initiated successfully',
-        runId: runId,
-        workflowUrl: `https://github.com/${GITHUB_OWNER}/${GITHUB_REPO}/actions`,
-        note: body.dryRun ? 'Running in DRY RUN mode - no changes will be made' : 'Deploying schema to your Supabase project'
-      })
-    };
+    return res.status(200).json({
+      success: true,
+      message: 'Supabase schema setup initiated successfully',
+      runId: runId,
+      workflowUrl: `https://github.com/${GITHUB_OWNER}/${GITHUB_REPO}/actions`,
+      note: body.dryRun ? 'Running in DRY RUN mode - no changes will be made' : 'Deploying schema to your Supabase project'
+    });
 
   } catch (error) {
     console.error('Setup error:', error);
 
-    return {
-      statusCode: 500,
-      headers,
-      body: JSON.stringify({
-        error: 'Failed to initiate setup',
-        message: error.message
-      })
-    };
+    return res.status(500).json({
+      error: 'Failed to initiate setup',
+      message: error.message
+    });
   }
-};
+}
 
 // Optional: Email notification function
 async function sendEmailNotification(email, clientName, runId) {

@@ -2,10 +2,13 @@
 // Deploy this to Vercel, Netlify Functions, or your preferred serverless platform
 
 const { Octokit } = require('@octokit/rest');
+const { App } = require('@octokit/app');
 const crypto = require('crypto');
 
 // Environment variables (set in your hosting platform)
-const GITHUB_TOKEN = process.env.GITHUB_TOKEN; // GitHub PAT with repo and workflow permissions
+const GITHUB_APP_ID = process.env.GITHUB_APP_ID; // GitHub App ID
+const GITHUB_PRIVATE_KEY = process.env.GITHUB_PRIVATE_KEY; // GitHub App private key
+const GITHUB_INSTALLATION_ID = process.env.GITHUB_INSTALLATION_ID; // Installation ID
 const GITHUB_OWNER = process.env.GITHUB_OWNER || 'codehobo-ai';
 const GITHUB_REPO = process.env.GITHUB_REPO || 'client-billing-automation-1758238516';
 const WEBHOOK_SECRET = process.env.WEBHOOK_SECRET; // For validating requests
@@ -66,10 +69,14 @@ exports.handler = async (event, context) => {
     // Create workflow run ID
     const runId = crypto.randomBytes(8).toString('hex');
 
-    // Initialize GitHub client
-    const octokit = new Octokit({
-      auth: GITHUB_TOKEN
+    // Initialize GitHub App
+    const app = new App({
+      appId: GITHUB_APP_ID,
+      privateKey: GITHUB_PRIVATE_KEY.replace(/\\n/g, '\n'), // Handle escaped newlines
     });
+
+    // Get authenticated Octokit instance for the installation
+    const octokit = await app.getInstallationOctokit(GITHUB_INSTALLATION_ID);
 
     // Trigger GitHub Actions workflow
     const response = await octokit.actions.createWorkflowDispatch({

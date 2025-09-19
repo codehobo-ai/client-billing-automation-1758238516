@@ -44,8 +44,8 @@ export default async function handler(req, res) {
       }
     }
 
-    // Validate Supabase URL format
-    if (!body.supabaseUrl.includes('supabase.co')) {
+    // Validate Supabase URL format (allow various formats)
+    if (!body.supabaseUrl.includes('supabase.co') && !body.supabaseUrl.includes('supbase.co')) {
       return res.status(400).json({ error: 'Invalid Supabase URL format' });
     }
 
@@ -62,7 +62,7 @@ export default async function handler(req, res) {
     const octokit = await app.getInstallationOctokit(GITHUB_INSTALLATION_ID);
 
     // Trigger GitHub Actions workflow
-    const response = await octokit.actions.createWorkflowDispatch({
+    const response = await octokit.request('POST /repos/{owner}/{repo}/actions/workflows/{workflow_id}/dispatches', {
       owner: GITHUB_OWNER,
       repo: GITHUB_REPO,
       workflow_id: 'supabase-setup.yml',

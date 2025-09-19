@@ -1,0 +1,19 @@
+{
+  "functions": {
+    "api/setup-handler.js": {
+      "maxDuration": 30
+    }
+  },
+  "env": {
+    "GITHUB_TOKEN": "@github_token",
+    "GITHUB_OWNER": "codehobo-ai",
+    "GITHUB_REPO": "client-billing-automation-1758238516",
+    "WEBHOOK_SECRET": "@webhook_secret",
+    "ALLOWED_DOMAINS": "https://codehobo-ai.github.io,http://localhost:3000"
+  },
+  "build": {
+    "env": {
+      "NODE_VERSION": "18"
+    }
+  }
+}

@@ -54,7 +54,7 @@ export default async function handler(req, res) {
 
     // Initialize GitHub App
     const app = new App({
-      appId: GITHUB_APP_ID,
+      appId: parseInt(GITHUB_APP_ID),
       privateKey: GITHUB_PRIVATE_KEY.replace(/\\n/g, '\n'), // Handle escaped newlines
     });
 

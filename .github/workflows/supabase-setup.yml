@@ -78,7 +78,7 @@ jobs:
 
       - name: Install Supabase CLI
         run: |
-          npm install -g @supabase/cli
+          npm install -g supabase
           echo "Supabase CLI installed"
 
       - name: Validate connection

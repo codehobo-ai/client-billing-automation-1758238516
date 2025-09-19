@@ -74,8 +74,15 @@ function main() {
     console.log(`🏠 Host: ${urlValidation.host}`);
 
     // Set GitHub outputs
-    console.log(`::set-output name=supabase_host::${urlValidation.host}`);
-    console.log(`::set-output name=project_id::${urlValidation.projectId}`);
+    if (process.env.GITHUB_OUTPUT) {
+      const fs = require('fs');
+      fs.appendFileSync(process.env.GITHUB_OUTPUT, `supabase_host=${urlValidation.host}\n`);
+      fs.appendFileSync(process.env.GITHUB_OUTPUT, `project_id=${urlValidation.projectId}\n`);
+    } else {
+      // Fallback for local testing
+      console.log(`::set-output name=supabase_host::${urlValidation.host}`);
+      console.log(`::set-output name=project_id::${urlValidation.projectId}`);
+    }
 
     if (dryRun === 'true') {
       console.log('🏃‍♂️ Dry run mode enabled - no actual changes will be made');

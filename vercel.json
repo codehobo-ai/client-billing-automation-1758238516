@@ -4,15 +4,6 @@
       "maxDuration": 30
     }
   },
-  "env": {
-    "GITHUB_APP_ID": "@github_app_id",
-    "GITHUB_INSTALLATION_ID": "@github_installation_id",
-    "GITHUB_PRIVATE_KEY": "@github_private_key",
-    "GITHUB_OWNER": "codehobo-ai",
-    "GITHUB_REPO": "client-billing-setup-automation-1758238516",
-    "WEBHOOK_SECRET": "@webhook_secret",
-    "ALLOWED_DOMAINS": "@allowed_domains"
-  },
   "build": {
     "env": {
       "NODE_VERSION": "18"

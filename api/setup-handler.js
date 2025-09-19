@@ -96,10 +96,18 @@ export default async function handler(req, res) {
 
   } catch (error) {
     console.error('Setup error:', error);
+    console.error('Environment check:', {
+      GITHUB_APP_ID: !!GITHUB_APP_ID,
+      GITHUB_INSTALLATION_ID: !!GITHUB_INSTALLATION_ID,
+      GITHUB_PRIVATE_KEY: !!GITHUB_PRIVATE_KEY,
+      GITHUB_OWNER,
+      GITHUB_REPO
+    });
 
     return res.status(500).json({
       error: 'Failed to initiate setup',
-      message: error.message
+      message: error.message,
+      details: error.status ? `HTTP ${error.status}: ${error.message}` : error.message
     });
   }
 }

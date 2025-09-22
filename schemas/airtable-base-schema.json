@@ -1,0 +1,295 @@
+{
+  "name": "Client Management System",
+  "description": "Complete client billing and project management base",
+  "workspaceId": null,
+  "tables": [
+    {
+      "name": "Clients",
+      "description": "Client information and contact details",
+      "fields": [
+        {
+          "name": "Client Name",
+          "type": "singleLineText",
+          "description": "Company or individual name"
+        },
+        {
+          "name": "Email",
+          "type": "email",
+          "description": "Primary contact email"
+        },
+        {
+          "name": "Phone",
+          "type": "phoneNumber",
+          "description": "Contact phone number"
+        },
+        {
+          "name": "Status",
+          "type": "singleSelect",
+          "options": [
+            { "name": "Active", "color": "greenLight2" },
+            { "name": "Inactive", "color": "grayLight2" },
+            { "name": "Prospect", "color": "blueLight2" },
+            { "name": "Archived", "color": "redLight2" }
+          ]
+        },
+        {
+          "name": "Created Date",
+          "type": "dateTime",
+          "description": "When the client was added"
+        },
+        {
+          "name": "Projects",
+          "type": "multipleRecordLinks",
+          "linkedTableId": "Projects"
+        },
+        {
+          "name": "Total Revenue",
+          "type": "rollup",
+          "rollup": {
+            "fieldId": "Projects",
+            "relationFieldId": "Revenue",
+            "function": "sum"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Projects",
+      "description": "Project tracking and management",
+      "fields": [
+        {
+          "name": "Project Name",
+          "type": "singleLineText",
+          "description": "Name of the project"
+        },
+        {
+          "name": "Client",
+          "type": "multipleRecordLinks",
+          "linkedTableId": "Clients",
+          "prefersSingleRecordLink": true
+        },
+        {
+          "name": "Status",
+          "type": "singleSelect",
+          "options": [
+            { "name": "Planning", "color": "blueLight2" },
+            { "name": "In Progress", "color": "yellowLight2" },
+            { "name": "Review", "color": "orangeLight2" },
+            { "name": "Completed", "color": "greenLight2" },
+            { "name": "On Hold", "color": "grayLight2" },
+            { "name": "Cancelled", "color": "redLight2" }
+          ]
+        },
+        {
+          "name": "Start Date",
+          "type": "date"
+        },
+        {
+          "name": "End Date",
+          "type": "date"
+        },
+        {
+          "name": "Budget",
+          "type": "currency",
+          "precision": 2
+        },
+        {
+          "name": "Revenue",
+          "type": "currency",
+          "precision": 2
+        },
+        {
+          "name": "Description",
+          "type": "multilineText"
+        },
+        {
+          "name": "Tasks",
+          "type": "multipleRecordLinks",
+          "linkedTableId": "Tasks"
+        },
+        {
+          "name": "Progress",
+          "type": "percent",
+          "precision": 0
+        }
+      ]
+    },
+    {
+      "name": "Tasks",
+      "description": "Detailed task tracking",
+      "fields": [
+        {
+          "name": "Task Name",
+          "type": "singleLineText"
+        },
+        {
+          "name": "Project",
+          "type": "multipleRecordLinks",
+          "linkedTableId": "Projects",
+          "prefersSingleRecordLink": true
+        },
+        {
+          "name": "Assigned To",
+          "type": "singleLineText"
+        },
+        {
+          "name": "Status",
+          "type": "singleSelect",
+          "options": [
+            { "name": "To Do", "color": "grayLight2" },
+            { "name": "In Progress", "color": "blueLight2" },
+            { "name": "Done", "color": "greenLight2" },
+            { "name": "Blocked", "color": "redLight2" }
+          ]
+        },
+        {
+          "name": "Priority",
+          "type": "singleSelect",
+          "options": [
+            { "name": "Low", "color": "grayLight2" },
+            { "name": "Medium", "color": "yellowLight2" },
+            { "name": "High", "color": "orangeLight2" },
+            { "name": "Urgent", "color": "redLight2" }
+          ]
+        },
+        {
+          "name": "Due Date",
+          "type": "date"
+        },
+        {
+          "name": "Hours",
+          "type": "number",
+          "precision": 1
+        },
+        {
+          "name": "Notes",
+          "type": "multilineText"
+        },
+        {
+          "name": "Completed",
+          "type": "checkbox"
+        }
+      ]
+    },
+    {
+      "name": "Invoices",
+      "description": "Invoice tracking and management",
+      "fields": [
+        {
+          "name": "Invoice Number",
+          "type": "singleLineText"
+        },
+        {
+          "name": "Client",
+          "type": "multipleRecordLinks",
+          "linkedTableId": "Clients",
+          "prefersSingleRecordLink": true
+        },
+        {
+          "name": "Project",
+          "type": "multipleRecordLinks",
+          "linkedTableId": "Projects",
+          "prefersSingleRecordLink": true
+        },
+        {
+          "name": "Amount",
+          "type": "currency",
+          "precision": 2
+        },
+        {
+          "name": "Status",
+          "type": "singleSelect",
+          "options": [
+            { "name": "Draft", "color": "grayLight2" },
+            { "name": "Sent", "color": "blueLight2" },
+            { "name": "Paid", "color": "greenLight2" },
+            { "name": "Overdue", "color": "redLight2" },
+            { "name": "Cancelled", "color": "grayLight2" }
+          ]
+        },
+        {
+          "name": "Issue Date",
+          "type": "date"
+        },
+        {
+          "name": "Due Date",
+          "type": "date"
+        },
+        {
+          "name": "Paid Date",
+          "type": "date"
+        },
+        {
+          "name": "Payment Method",
+          "type": "singleSelect",
+          "options": [
+            { "name": "Bank Transfer", "color": "blueLight2" },
+            { "name": "Credit Card", "color": "greenLight2" },
+            { "name": "PayPal", "color": "yellowLight2" },
+            { "name": "Check", "color": "grayLight2" },
+            { "name": "Cash", "color": "purpleLight2" }
+          ]
+        },
+        {
+          "name": "Notes",
+          "type": "multilineText"
+        }
+      ]
+    },
+    {
+      "name": "Time Tracking",
+      "description": "Time entries for billing",
+      "fields": [
+        {
+          "name": "Date",
+          "type": "date"
+        },
+        {
+          "name": "Task",
+          "type": "multipleRecordLinks",
+          "linkedTableId": "Tasks",
+          "prefersSingleRecordLink": true
+        },
+        {
+          "name": "Project",
+          "type": "multipleRecordLinks",
+          "linkedTableId": "Projects",
+          "prefersSingleRecordLink": true
+        },
+        {
+          "name": "Hours",
+          "type": "number",
+          "precision": 2
+        },
+        {
+          "name": "Rate",
+          "type": "currency",
+          "precision": 2
+        },
+        {
+          "name": "Total",
+          "type": "formula",
+          "formula": "{Hours} * {Rate}"
+        },
+        {
+          "name": "Description",
+          "type": "multilineText"
+        },
+        {
+          "name": "Billable",
+          "type": "checkbox"
+        },
+        {
+          "name": "Invoiced",
+          "type": "checkbox"
+        },
+        {
+          "name": "Invoice",
+          "type": "multipleRecordLinks",
+          "linkedTableId": "Invoices",
+          "prefersSingleRecordLink": true
+        }
+      ]
+    }
+  ]
+}

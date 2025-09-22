@@ -1,0 +1,296 @@
+name: Full Automation Setup
+
+on:
+  workflow_dispatch:
+    inputs:
+      client_name:
+        description: 'Client/Organization name'
+        required: true
+        type: string
+      email:
+        description: 'Contact email'
+        required: true
+        type: string
+
+      # Supabase Configuration
+      setup_supabase:
+        description: 'Setup Supabase database'
+        required: false
+        type: boolean
+        default: true
+      supabase_url:
+        description: 'Supabase project URL'
+        required: false
+        type: string
+      supabase_service_key:
+        description: 'Supabase service role key'
+        required: false
+        type: string
+      database_password:
+        description: 'Database password'
+        required: false
+        type: string
+
+      # Airtable Configuration
+      setup_airtable:
+        description: 'Setup Airtable base'
+        required: false
+        type: boolean
+        default: false
+      airtable_api_key:
+        description: 'Airtable API key'
+        required: false
+        type: string
+      airtable_base_id:
+        description: 'Existing Airtable base ID (leave empty to create new)'
+        required: false
+        type: string
+      airtable_create_new:
+        description: 'Force create new base even if base_id provided'
+        required: false
+        type: boolean
+        default: false
+
+      # n8n Configuration
+      setup_n8n:
+        description: 'Setup n8n workflows'
+        required: false
+        type: boolean
+        default: false
+      n8n_url:
+        description: 'n8n instance URL'
+        required: false
+        type: string
+      n8n_api_key:
+        description: 'n8n API key'
+        required: false
+        type: string
+      n8n_activate_workflows:
+        description: 'Activate workflows after deployment'
+        required: false
+        type: boolean
+        default: false
+
+      # General Options
+      dry_run:
+        description: 'Dry run mode (validate only)'
+        required: false
+        type: boolean
+        default: false
+
+jobs:
+  setup-automation:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Install dependencies
+        run: |
+          npm install
+          npm install airtable axios
+
+      - name: 🔍 Validate inputs
+        run: |
+          echo "==================================="
+          echo "Client Setup Configuration"
+          echo "==================================="
+          echo "Client: ${{ inputs.client_name }}"
+          echo "Email: ${{ inputs.email }}"
+          echo ""
+          echo "Services to setup:"
+          echo "- Supabase: ${{ inputs.setup_supabase }}"
+          echo "- Airtable: ${{ inputs.setup_airtable }}"
+          echo "- n8n: ${{ inputs.setup_n8n }}"
+          echo ""
+          echo "Dry run mode: ${{ inputs.dry_run }}"
+          echo "==================================="
+
+      # Supabase Setup
+      - name: 📊 Setup Supabase Database
+        if: inputs.setup_supabase == true
+        env:
+          SUPABASE_URL: ${{ inputs.supabase_url }}
+          SUPABASE_SERVICE_KEY: ${{ inputs.supabase_service_key }}
+          DATABASE_PASSWORD: ${{ inputs.database_password }}
+        run: |
+          echo "🚀 Setting up Supabase for ${{ inputs.client_name }}..."
+
+          if [ "${{ inputs.dry_run }}" == "true" ]; then
+            echo "DRY RUN: Would setup Supabase database"
+            echo "- URL: $SUPABASE_URL"
+            echo "- Tables to create: clients, projects, invoices, etc."
+            echo "- Security policies: RLS enabled"
+          else
+            # Install Supabase CLI
+            curl -sSfL https://supabase.com/install.sh | sh
+            export PATH="$HOME/.local/bin:$PATH"
+
+            # Run SQL migrations
+            for sql_file in sql/*.sql; do
+              if [ -f "$sql_file" ]; then
+                echo "Executing: $sql_file"
+                psql "$SUPABASE_URL" -f "$sql_file"
+              fi
+            done
+
+            echo "✅ Supabase setup complete!"
+          fi
+
+      # Airtable Setup
+      - name: 📋 Setup Airtable Base
+        if: inputs.setup_airtable == true
+        env:
+          AIRTABLE_API_KEY: ${{ inputs.airtable_api_key }}
+        run: |
+          echo "🚀 Setting up Airtable for ${{ inputs.client_name }}..."
+
+          if [ "${{ inputs.dry_run }}" == "true" ]; then
+            echo "DRY RUN: Would setup Airtable base"
+            echo "- Base ID: ${{ inputs.airtable_base_id || 'New base' }}"
+            echo "- Tables: Clients, Projects, Tasks, Invoices, Time Tracking"
+            echo "- Create new: ${{ inputs.airtable_create_new }}"
+          else
+            # Run Airtable schema sync
+            if [ "${{ inputs.airtable_create_new }}" == "true" ] || [ -z "${{ inputs.airtable_base_id }}" ]; then
+              echo "Creating new Airtable base..."
+              node scripts/airtable-schema-sync.js \
+                "$AIRTABLE_API_KEY" \
+                schemas/airtable-base-schema.json \
+                --create-new
+            else
+              echo "Syncing with existing base: ${{ inputs.airtable_base_id }}"
+              node scripts/airtable-schema-sync.js \
+                "$AIRTABLE_API_KEY" \
+                schemas/airtable-base-schema.json \
+                "${{ inputs.airtable_base_id }}"
+            fi
+
+            echo "✅ Airtable setup complete!"
+          fi
+
+      # n8n Setup
+      - name: ⚡ Setup n8n Workflows
+        if: inputs.setup_n8n == true
+        env:
+          N8N_URL: ${{ inputs.n8n_url }}
+          N8N_API_KEY: ${{ inputs.n8n_api_key }}
+        run: |
+          echo "🚀 Setting up n8n workflows for ${{ inputs.client_name }}..."
+
+          if [ "${{ inputs.dry_run }}" == "true" ]; then
+            echo "DRY RUN: Would deploy n8n workflows"
+            echo "- n8n URL: $N8N_URL"
+            echo "- Workflows to deploy: $(ls workflows/*.json 2>/dev/null | wc -l)"
+            echo "- Activate workflows: ${{ inputs.n8n_activate_workflows }}"
+          else
+            # Deploy workflows
+            OPTIONS=""
+            if [ "${{ inputs.n8n_activate_workflows }}" == "true" ]; then
+              OPTIONS="--activate"
+            fi
+
+            # If Airtable was set up, get the base ID
+            if [ "${{ inputs.setup_airtable }}" == "true" ] && [ -n "${{ inputs.airtable_base_id }}" ]; then
+              OPTIONS="$OPTIONS --airtable-base=${{ inputs.airtable_base_id }}"
+            fi
+
+            # Deploy each workflow
+            for workflow_file in workflows/*.json; do
+              if [ -f "$workflow_file" ]; then
+                echo "Deploying workflow: $workflow_file"
+                node scripts/n8n-workflow-deploy.js \
+                  "$N8N_URL" \
+                  "$N8N_API_KEY" \
+                  "$workflow_file" \
+                  $OPTIONS
+              fi
+            done
+
+            echo "✅ n8n setup complete!"
+          fi
+
+      # Integration Setup
+      - name: 🔗 Configure Integrations
+        if: (inputs.setup_supabase == true || inputs.setup_airtable == true || inputs.setup_n8n == true) && inputs.dry_run == false
+        run: |
+          echo "🔗 Configuring service integrations..."
+
+          INTEGRATION_CONFIG="{
+            \"client\": \"${{ inputs.client_name }}\",
+            \"services\": {
+              \"supabase\": {
+                \"enabled\": ${{ inputs.setup_supabase }},
+                \"url\": \"${{ inputs.supabase_url }}\"
+              },
+              \"airtable\": {
+                \"enabled\": ${{ inputs.setup_airtable }},
+                \"baseId\": \"${{ inputs.airtable_base_id }}\"
+              },
+              \"n8n\": {
+                \"enabled\": ${{ inputs.setup_n8n }},
+                \"url\": \"${{ inputs.n8n_url }}\"
+              }
+            }
+          }"
+
+          echo "$INTEGRATION_CONFIG" > integration-config.json
+          echo "Configuration saved to integration-config.json"
+
+      # Generate Setup Report
+      - name: 📄 Generate Setup Report
+        if: always()
+        run: |
+          echo "==================================="
+          echo "Setup Report for ${{ inputs.client_name }}"
+          echo "==================================="
+          echo "Date: $(date)"
+          echo "Email: ${{ inputs.email }}"
+          echo ""
+          echo "Services Setup Status:"
+
+          if [ "${{ inputs.setup_supabase }}" == "true" ]; then
+            echo "✅ Supabase: Configured"
+          else
+            echo "⏭️ Supabase: Skipped"
+          fi
+
+          if [ "${{ inputs.setup_airtable }}" == "true" ]; then
+            echo "✅ Airtable: Configured"
+          else
+            echo "⏭️ Airtable: Skipped"
+          fi
+
+          if [ "${{ inputs.setup_n8n }}" == "true" ]; then
+            echo "✅ n8n: Configured"
+          else
+            echo "⏭️ n8n: Skipped"
+          fi
+
+          echo ""
+          echo "Mode: ${{ inputs.dry_run == true && 'DRY RUN' || 'PRODUCTION' }}"
+          echo "==================================="
+
+      - name: 📧 Send completion notification
+        if: inputs.dry_run == false
+        continue-on-error: true
+        run: |
+          echo "Would send email to ${{ inputs.email }} with setup details"
+          # In production, integrate with email service (SendGrid, AWS SES, etc.)
+
+      # Upload artifacts for debugging
+      - name: Upload setup artifacts
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: setup-logs-${{ github.run_id }}
+          path: |
+            integration-config.json
+            *.log
+          retention-days: 7

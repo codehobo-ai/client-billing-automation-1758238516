@@ -37,16 +37,41 @@ export default async function handler(req, res) {
     const body = req.body;
 
     // Validate required fields
-    const required = ['clientName', 'email', 'supabaseUrl', 'supabaseKey', 'databasePassword'];
+    const required = ['clientName', 'email'];
     for (const field of required) {
       if (!body[field]) {
         return res.status(400).json({ error: `Missing required field: ${field}` });
       }
     }
 
-    // Validate Supabase URL format (allow various formats)
-    if (!body.supabaseUrl.includes('supabase.co') && !body.supabaseUrl.includes('supbase.co')) {
-      return res.status(400).json({ error: 'Invalid Supabase URL format' });
+    // Validate service-specific requirements
+    if (body.setupSupabase !== false) {
+      const supabaseRequired = ['supabaseUrl', 'supabaseKey', 'databasePassword'];
+      for (const field of supabaseRequired) {
+        if (!body[field]) {
+          return res.status(400).json({ error: `Missing required Supabase field: ${field}` });
+        }
+      }
+
+      // Validate Supabase URL format
+      if (!body.supabaseUrl.includes('supabase.co') && !body.supabaseUrl.includes('supbase.co')) {
+        return res.status(400).json({ error: 'Invalid Supabase URL format' });
+      }
+    }
+
+    if (body.setupAirtable === true) {
+      if (!body.airtableApiKey) {
+        return res.status(400).json({ error: 'Missing required Airtable API key' });
+      }
+    }
+
+    if (body.setupN8n === true) {
+      const n8nRequired = ['n8nUrl', 'n8nApiKey'];
+      for (const field of n8nRequired) {
+        if (!body[field]) {
+          return res.status(400).json({ error: `Missing required n8n field: ${field}` });
+        }
+      }
     }
 
     // Create workflow run ID
@@ -62,19 +87,38 @@ export default async function handler(req, res) {
     const octokit = await app.getInstallationOctokit(GITHUB_INSTALLATION_ID);
 
     // Trigger GitHub Actions workflow
+    const workflowInputs = {
+      client_name: body.clientName,
+      email: body.email,
+
+      // Supabase inputs
+      setup_supabase: String(body.setupSupabase !== false),
+      supabase_url: body.supabaseUrl || '',
+      supabase_service_key: body.supabaseKey || '',
+      database_password: body.databasePassword || '',
+
+      // Airtable inputs
+      setup_airtable: String(body.setupAirtable === true),
+      airtable_api_key: body.airtableApiKey || '',
+      airtable_base_id: body.airtableBaseId || '',
+      airtable_create_new: String(body.airtableCreateNew === true),
+
+      // n8n inputs
+      setup_n8n: String(body.setupN8n === true),
+      n8n_url: body.n8nUrl || '',
+      n8n_api_key: body.n8nApiKey || '',
+      n8n_activate_workflows: String(body.n8nActivateWorkflows === true),
+
+      // General options
+      dry_run: String(body.dryRun || false)
+    };
+
     const response = await octokit.request('POST /repos/{owner}/{repo}/actions/workflows/{workflow_id}/dispatches', {
       owner: GITHUB_OWNER,
       repo: GITHUB_REPO,
-      workflow_id: 'supabase-setup.yml',
+      workflow_id: 'full-automation-setup.yml',
       ref: 'main',
-      inputs: {
-        client_name: body.clientName,
-        supabase_url: body.supabaseUrl,
-        supabase_service_key: body.supabaseKey,
-        database_password: body.databasePassword,
-        setup_vector_extension: String(body.vectorExtension || true),
-        dry_run: String(body.dryRun || false)
-      }
+      inputs: workflowInputs
     });
 
     // Log the setup request (you might want to store this in a database)

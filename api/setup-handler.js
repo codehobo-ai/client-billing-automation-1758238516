@@ -4,6 +4,8 @@
 const { Octokit } = require('@octokit/rest');
 const { App } = require('@octokit/app');
 const crypto = require('crypto');
+const { createLogger } = require('../utils/logger');
+const { getMonitor } = require('../utils/monitoring');
 
 // Environment variables (set in your hosting platform)
 const GITHUB_APP_ID = process.env.GITHUB_APP_ID; // GitHub App ID
@@ -16,6 +18,11 @@ const ALLOWED_DOMAINS = process.env.ALLOWED_DOMAINS?.split(',') || ['*']; // COR
 
 // Main handler function for Vercel
 export default async function handler(req, res) {
+  // Initialize logging for this request
+  const runId = crypto.randomBytes(8).toString('hex');
+  const logger = createLogger('api-handler', { runId });
+  const monitor = getMonitor();
+
   // CORS headers
   const origin = ALLOWED_DOMAINS[0] === '*' ? '*' : req.headers.origin;
   res.setHeader('Access-Control-Allow-Origin', origin);
@@ -25,13 +32,18 @@ export default async function handler(req, res) {
 
   // Handle preflight
   if (req.method === 'OPTIONS') {
+    logger.debug('CORS preflight request');
     return res.status(200).end();
   }
 
   // Only allow POST
   if (req.method !== 'POST') {
+    logger.warn('Invalid HTTP method', { method: req.method });
     return res.status(405).json({ error: 'Method not allowed' });
   }
+
+  const startTime = Date.now();
+  logger.serviceStart('automation-setup', { runId });
 
   try {
     const body = req.body;
@@ -121,26 +133,62 @@ export default async function handler(req, res) {
       inputs: workflowInputs
     });
 
-    // Log the setup request (you might want to store this in a database)
-    console.log(`Setup initiated for ${body.clientName} by ${body.email} - Run ID: ${runId}`);
+    const selectedServices = [];
+    if (body.setupSupabase) selectedServices.push('Supabase');
+    if (body.setupAirtable) selectedServices.push('Airtable');
+    if (body.setupN8n) selectedServices.push('n8n');
 
-    // Optional: Send email notification
-    // await sendEmailNotification(body.email, body.clientName, runId);
+    // Track deployment start
+    monitor.trackDeploymentStart(runId, selectedServices, body.clientName);
 
-    // Optional: Store in database for tracking
-    // await storeSetupRequest(body, runId);
+    logger.info('Automation setup initiated', {
+      client: body.clientName,
+      email: body.email,
+      services: selectedServices,
+      dryRun: body.dryRun
+    });
+
+    const duration = Date.now() - startTime;
+    monitor.trackDeploymentComplete(runId, true, duration, {
+      services: selectedServices,
+      dryRun: body.dryRun
+    });
+
+    logger.serviceComplete('automation-setup', {
+      runId,
+      duration,
+      services: selectedServices
+    });
 
     return res.status(200).json({
       success: true,
-      message: 'Supabase schema setup initiated successfully',
+      message: 'Automation setup initiated successfully',
       runId: runId,
       workflowUrl: `https://github.com/${GITHUB_OWNER}/${GITHUB_REPO}/actions`,
-      note: body.dryRun ? 'Running in DRY RUN mode - no changes will be made' : 'Deploying schema to your Supabase project'
+      services: selectedServices,
+      note: body.dryRun ? 'Running in DRY RUN mode - no changes will be made' : 'Deploying automation to your services'
     });
 
   } catch (error) {
-    console.error('Setup error:', error);
-    console.error('Environment check:', {
+    const duration = Date.now() - startTime;
+
+    logger.serviceError('automation-setup', error, {
+      runId,
+      duration,
+      client: body?.clientName,
+      services: body ? [
+        body.setupSupabase && 'Supabase',
+        body.setupAirtable && 'Airtable',
+        body.setupN8n && 'n8n'
+      ].filter(Boolean) : []
+    });
+
+    monitor.trackDeploymentComplete(runId, false, duration, {
+      error: error.message,
+      stack: error.stack
+    });
+
+    logger.debug('Environment check', {
       GITHUB_APP_ID: !!GITHUB_APP_ID,
       GITHUB_INSTALLATION_ID: !!GITHUB_INSTALLATION_ID,
       GITHUB_PRIVATE_KEY: !!GITHUB_PRIVATE_KEY,
@@ -151,6 +199,7 @@ export default async function handler(req, res) {
     return res.status(500).json({
       error: 'Failed to initiate setup',
       message: error.message,
+      runId: runId,
       details: error.status ? `HTTP ${error.status}: ${error.message}` : error.message
     });
   }

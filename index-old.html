@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Supabase Schema Setup</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            max-width: 500px;
+            width: 100%;
+            padding: 40px;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #555;
+            font-weight: 500;
+            font-size: 14px;
+        }
+
+        input[type="text"],
+        input[type="url"],
+        input[type="password"],
+        input[type="email"] {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e1e4e8;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        input[type="checkbox"] {
+            margin-right: 10px;
+            width: 18px;
+            height: 18px;
+        }
+
+        .checkbox-group label {
+            margin-bottom: 0;
+            cursor: pointer;
+        }
+
+        .help-text {
+            font-size: 12px;
+            color: #666;
+            margin-top: 5px;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 30px;
+        }
+
+        button {
+            flex: 1;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: #f6f8fa;
+            color: #333;
+        }
+
+        .btn-secondary:hover {
+            background: #e1e4e8;
+        }
+
+        .status {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 8px;
+            font-size: 14px;
+            display: none;
+        }
+
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .status.info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-left: 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .security-note {
+            background: #fff3cd;
+            border: 1px solid #ffeeba;
+            color: #856404;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 13px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 Supabase Schema Setup</h1>
+        <p class="subtitle">Automatically deploy billing automation schema to your Supabase project</p>
+
+        <div class="security-note">
+            ⚠️ <strong>Security Note:</strong> For production use, never expose service keys. This form should be used with a backend API that securely handles credentials.
+        </div>
+
+        <form id="setupForm">
+            <div class="form-group">
+                <label for="clientName">Client Name *</label>
+                <input type="text" id="clientName" name="clientName" required placeholder="e.g., Acme Corporation">
+                <div class="help-text">Reference name for this setup</div>
+            </div>
+
+            <div class="form-group">
+                <label for="email">Your Email *</label>
+                <input type="email" id="email" name="email" required placeholder="your@email.com">
+                <div class="help-text">We'll send setup confirmation here</div>
+            </div>
+
+            <div class="form-group">
+                <label for="supabaseUrl">Supabase Project URL *</label>
+                <input type="url" id="supabaseUrl" name="supabaseUrl" required placeholder="https://your-project.supabase.co">
+                <div class="help-text">Found in your Supabase project settings</div>
+            </div>
+
+            <div class="form-group">
+                <label for="supabaseKey">Service Role Key *</label>
+                <input type="password" id="supabaseKey" name="supabaseKey" required placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...">
+                <div class="help-text">Settings → API → service_role (secret)</div>
+            </div>
+
+            <div class="form-group">
+                <label for="databasePassword">Database Password *</label>
+                <input type="password" id="databasePassword" name="databasePassword" required placeholder="Your database password">
+                <div class="help-text">Settings → Database → Connection string</div>
+            </div>
+
+            <div class="checkbox-group">
+                <input type="checkbox" id="vectorExtension" name="vectorExtension" checked>
+                <label for="vectorExtension">Enable vector extension (pgvector) for AI embeddings</label>
+            </div>
+
+            <div class="checkbox-group">
+                <input type="checkbox" id="dryRun" name="dryRun" checked>
+                <label for="dryRun">Dry run (test without making changes)</label>
+            </div>
+
+            <div class="button-group">
+                <button type="button" class="btn-secondary" onclick="testConnection()">Test Connection</button>
+                <button type="submit" class="btn-primary">Deploy Schema</button>
+            </div>
+
+            <div id="status" class="status"></div>
+        </form>
+    </div>
+
+    <script>
+        const API_ENDPOINT = '/api/setup-handler'; // Use relative path for API
+        const GITHUB_TOKEN = ''; // For direct GitHub API calls (not recommended for production)
+
+        function showStatus(message, type = 'info') {
+            const statusEl = document.getElementById('status');
+            statusEl.className = `status ${type}`;
+            statusEl.innerHTML = message;
+            statusEl.style.display = 'block';
+        }
+
+        async function testConnection() {
+            const url = document.getElementById('supabaseUrl').value;
+            const key = document.getElementById('supabaseKey').value;
+
+            if (!url || !key) {
+                showStatus('Please enter Supabase URL and Service Key', 'error');
+                return;
+            }
+
+            showStatus('Testing connection... <span class="loading"></span>', 'info');
+
+            // In production, this should call your backend API
+            try {
+                const response = await fetch(`${url}/rest/v1/`, {
+                    headers: {
+                        'apikey': key,
+                        'Authorization': `Bearer ${key}`
+                    }
+                });
+
+                if (response.ok) {
+                    showStatus('✅ Connection successful!', 'success');
+                } else {
+                    showStatus('❌ Connection failed. Please check your credentials.', 'error');
+                }
+            } catch (error) {
+                showStatus('❌ Connection error: ' + error.message, 'error');
+            }
+        }
+
+        document.getElementById('setupForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const formData = {
+                clientName: document.getElementById('clientName').value,
+                email: document.getElementById('email').value,
+                supabaseUrl: document.getElementById('supabaseUrl').value,
+                supabaseKey: document.getElementById('supabaseKey').value,
+                databasePassword: document.getElementById('databasePassword').value,
+                vectorExtension: document.getElementById('vectorExtension').checked,
+                dryRun: document.getElementById('dryRun').checked
+            };
+
+            showStatus('Initiating setup... <span class="loading"></span>', 'info');
+
+            // Option 1: Call your backend API (recommended)
+            if (API_ENDPOINT) {
+                try {
+                    const response = await fetch(API_ENDPOINT, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(formData)
+                    });
+
+                    const result = await response.json();
+
+                    if (response.ok) {
+                        showStatus(`✅ Setup initiated successfully! Check your email for details.`, 'success');
+                    } else {
+                        showStatus(`❌ Setup failed: ${result.error}`, 'error');
+                    }
+                } catch (error) {
+                    showStatus(`❌ Error: ${error.message}`, 'error');
+                }
+            } else {
+                // Option 2: Direct GitHub API call (not recommended for production)
+                showStatus('⚠️ No backend API configured. Please set up a secure backend to handle credentials.', 'error');
+            }
+        });
+    </script>
+</body>
+</html>
